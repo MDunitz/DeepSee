@@ -214,7 +214,13 @@ def interp(cruise_data_string, method, resolution, color_mode, cylinders, variab
     var_interp_values = []
     for var in variables:
         # have to drop nans or griddata fails
-        df_temp = df[meta + [var]].dropna().reset_index().drop(columns=["index"])
+        # only coordinates + the variable itself are needed; sum_abundance is only used for Taxa
+        df_temp = (
+            df[meta + [var]]
+            .dropna(subset=["Longitude_rel_cm", "Latitude_rel_cm", "start_depth", var])
+            .reset_index()
+            .drop(columns=["index"])
+        )
         if len(df_temp.index) == 0:
             # no data
             xyz_og_values.append((pd.Series(dtype=object), pd.Series(dtype=object), pd.Series(dtype=object)))
