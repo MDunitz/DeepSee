@@ -29,7 +29,10 @@ from waitress import serve
 #
 try:
     from naturalneighbor import griddata as nngd
+
+    NATURAL_AVAILABLE = True
 except ImportError:
+    NATURAL_AVAILABLE = False
     print("WARNING:Cannot import `naturalneighbor` library.")
     print("> `naturalneighbor` library can only be installed on a Windows OS.")
     print("> The frontend should not send a request for `Natural Neighbor` interpolations when the user is not using a Windows OS.")
@@ -47,8 +50,11 @@ logger = logging.getLogger("waitress")
 logger.setLevel(logging.INFO)
 
 
-# Create Flask app
-app = Flask(__name__)
+# Create Flask app.
+# When DEEPSEE_STATIC_DIR points at the built interface (interface/dist), this server
+# also serves the page, so the interface and /getInterp share one origin and one port.
+STATIC_DIR = os.environ.get("DEEPSEE_STATIC_DIR")
+app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
 CORS(app)
 
 
@@ -333,6 +339,8 @@ def interp(cruise_data_string, method, resolution, color_mode, cylinders, variab
 
 @app.route("/", methods=["GET"])
 def get_connected():
+    if STATIC_DIR:
+        return app.send_static_file("index.html")
     return jsonify("Connected!")
 
 
@@ -347,6 +355,10 @@ def get_interp():
     cylinders = data_in["cylinders"]  # filter data by cylinders
     variables = data_in["variables"]  # variables to interpolate
     category = data_in["category"]  # 'Geochemistry' or 'Taxa' => determines if variable needs adjusting before interp
+
+    # The browser only checks the viewer's OS; the server may be Linux even when the viewer is on Windows.
+    if method == "Natural" and not NATURAL_AVAILABLE:
+        return jsonify("Natural neighbor interpolation is not installed on this server; use Linear."), 400
 
     data_out = interp(
         cruise_data_string, method, resolution, color_mode, cylinders, variables, category
