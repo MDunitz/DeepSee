@@ -1881,7 +1881,12 @@ export default {
   data: () => ({
     // constants
     publicPath: process.env.BASE_URL,
-    backendURL: "http://localhost:3000",
+    // VUE_APP_BACKEND_URL is fixed at build time. The container build sets it to ""
+    // so interpolation requests go to the same origin that served the page.
+    backendURL:
+      process.env.VUE_APP_BACKEND_URL !== undefined
+        ? process.env.VUE_APP_BACKEND_URL
+        : "http://localhost:3000",
     // backendURL: "https://d2d-2021-oceans-backend.herokuapp.com",
     icons: {
       mdiMenuDown: mdiMenuDown,
