@@ -177,6 +177,29 @@ Then run the server:
 python app.py
 ```
 
+### Container (Podman or Docker)
+
+`Containerfile` builds the interface and serves it from the interpolation server, so
+the page and `/getInterp` share one origin and one port. Viewers only need one tunnel.
+
+```bash
+podman build -f Containerfile -t deepsee .
+# Publish on the server's loopback only; reach it through an SSH tunnel.
+podman run -d --name deepsee --memory 8g -p 127.0.0.1:8002:3000 deepsee
+# From your laptop:
+ssh -L 8002:localhost:8002 <user>@<server>   # then open http://localhost:8002
+```
+
+- The image ships the Pescadero cruise as a test dataset. To serve other cruises, mount a
+  folder laid out like `interface/public/assets` over `/deepsee/interface/dist/assets`
+  (`-v /path/to/assets:/deepsee/interface/dist/assets:ro`). Reload the page to pick up changes.
+- Natural neighbor interpolation is not installed in the image (Windows only); the server
+  returns 400 for it. Use Linear.
+- Interpolation memory grows with the grid: about (width / resolution) × (length / resolution)
+  × (depth in cm) points. Three Pescadero cores 22 m apart at 21 cm make about 3.4e5 points
+  and a 78 MB response; selecting cores hundreds of metres apart at 7 cm can need many GB,
+  so keep `--memory` set on a shared server.
+
 ## Credits
 
 DeepSee is a result of a collaboration between visualization experts in human-centered computing, interaction design, scientific data visualization and art, as well as scientists and researchers with expertise in environmental microbiology, geochemistry and geology from
