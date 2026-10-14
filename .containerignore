@@ -1,0 +1,8 @@
+**/node_modules
+interface/dist
+interface/app
+server/venv
+server/dist
+server/build
+.git
+images
